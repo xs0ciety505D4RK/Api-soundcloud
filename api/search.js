@@ -1,44 +1,17 @@
-/*
-Scrape by xs0ciety505/xs0cietyHUB
-t.me/xs0cietyHUB
-wa.me/9779845668812
-*/
+import { searchTracks } from "../lib/soundcloud.js";
 
-const { searchOriginal } = require("../lib/soundcloud");
-
-function getQuery(req, key) {
+export default async function handler(req, res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Cache-Control", "no-store");
+  if (req.method === "OPTIONS") return res.status(204).end();
+  if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
   try {
-    const u = new URL(req.url, "http://x");
-    return u.searchParams.get(key);
-  } catch {
-    return req.query?.[key];
+    const q = String(req.query.q || "").trim();
+    if (q.length < 2) return res.status(400).json({ error: "Search query must contain at least 2 characters." });
+    const results = await searchTracks(q);
+    return res.status(200).json({ ok: true, collection: results.collection || [] });
+  } catch (error) {
+    return res.status(error.status || 502).json({ error: error.message });
   }
 }
-
-module.exports = async (req, res) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Cache-Control", "public, max-age=60");
-
-  if (req.method !== "GET") {
-    return res.status(405).json({ success: false, error: "Method not allowed" });
-  }
-
-  const q = getQuery(req, "q");
-  if (!q || q.trim().length < 2) {
-    return res.status(400).json({
-      success: false,
-      error: "Parameter 'q' wajib (min 2 karakter)",
-      example: "/api/search?q=Taylor Swift",
-    });
-  }
-
-  const rawLimit = parseInt(getQuery(req, "limit"), 10);
-  const limit = Math.min(isNaN(rawLimit) ? 20 : rawLimit, 50);
-
-  try {
-    const data = await searchOriginal(q.trim(), limit);
-    res.status(200).json({ success: true, ...data });
-  } catch (e) {
-    res.status(500).json({ success: false, error: e.message });
-  }
-};
