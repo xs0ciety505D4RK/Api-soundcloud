@@ -1,4 +1,7 @@
 {
-  "version": 2,
-  "functions": { "api/*.js": { "maxDuration": 15 } }
+  "functions": {
+    "api/*.ts": {
+      "maxDuration": 30
+    }
+  }
 }
